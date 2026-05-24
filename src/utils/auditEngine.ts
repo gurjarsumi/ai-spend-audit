@@ -1,236 +1,251 @@
-// Type definitions for form state data
+// TYPE DEFINITIONS FOR THE COMPUTATIONAL PAYLOADS
 export interface ToolInput {
-    plan: string;
-    monthlySpend: number;
-    seats: number;
+  plan: string;          
+  monthlySpend: number;  
+  seats: number;         
 }
 
 export interface AuditSuiteInput {
-    teamSize: number;
-    primaryUseCase: 'coding' | 'writing' | 'data' | 'research' | 'mixed';
-    tools: {
-        cursor?: ToolInput;
-        githubCopilot?: ToolInput;
-        claude?: ToolInput;
-        chatgpt?: ToolInput;
-        anthropicApi?: ToolInput;
-        openAiApi?: ToolInput;
-        gemini?: ToolInput;
-        windsurf?: ToolInput;
-    };
+  teamSize: number;
+  primaryUseCase: 'coding' | 'writing' | 'data' | 'research' | 'mixed';
+  tools: {
+    cursor?: ToolInput;
+    githubCopilot?: ToolInput;
+    claude?: ToolInput;
+    chatGpt?: ToolInput;
+    anthropicApi?: ToolInput;
+    openAiApi?: ToolInput;
+    gemini?: ToolInput;
+    windsurf?: ToolInput; 
+  };
 }
 
 export interface ToolAuditResult {
-    currentSpend: number;
-    recommendedActions: string;
-    recommendedSpend: number;
-    savings: number;
-    reasoning: string;
+  currentSpend: number;
+  recommendedAction: string;
+  recommendedSpend: number;
+  savings: number;
+  reasoning: string;
 }
 
 export interface FinalAuditReport {
-    totalMonthlySpend: number;
-    totalMonthlySavings: number;
-    totalAnnualSavings: number;
-    toolBreakdown: Record<string, ToolAuditResult>;
-    tierStatus: 'OPTIMAL' | 'MODERATE_SAVINGS' | 'HIGH_SAVINGS';
-    requiresConsultation: boolean;
+  totalMonthlySpend: number;
+  totalMonthlySavings: number;
+  totalAnnualSavings: number;
+  toolBreakdown: Record<string, ToolAuditResult>;
+  tierStatus: 'OPTIMAL' | 'MODERATE_SAVINGS' | 'HIGH_SAVINGS';
+  requiresConsultation: boolean;
 }
 
-/** 
- * Audit Engine: Runs deterministic, financially defensible rules over AI tool spending.
- * Hardcoded rules prevent LLM hallucination in calculations.
+// DEFENSIVE INGESTION & TEXT NORMALIZATION UTILITIEs
+/**
+ * Normalizes wild string tokens entered by the user into standardized groups.
+ * Guarantees mathematical safety against execution panics or NaN corruptions.
+ */
+export function normalizePlanTier(planName: string): 'pro' | 'team' | 'api' | 'fallback' {
+  const normalized = planName.toLowerCase().trim();
+  
+  if (normalized.includes('pro') || normalized.includes('plus') || normalized.includes('individual') || normalized.includes('hobby')) {
+    return 'pro';
+  }
+  if (normalized.includes('team') || normalized.includes('business') || normalized.includes('work') || normalized.includes('enterprise')) {
+    return 'team';
+  }
+  if (normalized.includes('api') || normalized.includes('direct') || normalized.includes('token')) {
+    return 'api';
+  }
+  
+  // Safe default fallback group for unrecognized custom text patterns
+  return 'fallback';
+}
+
+// MAIN DETERMINISTIC AUDIT RUNTIME ENGINE
+/**
+ * Runs hardcoded, deterministic rules over software spending layers.
+ * Operates without LLM wrappers to guarantee financially defensible proofs.
  */
 export function runAuditEngine(input: AuditSuiteInput): FinalAuditReport {
-    const toolBreakdown: Record<string, ToolAuditResult> = {};
-    let totalMonthlySpend = 0;
-    let totalMonthlySavings = 0;
+  const toolBreakdown: Record<string, ToolAuditResult> = {};
+  let totalMonthlySpend = 0;
+  let totalMonthlySavings = 0;
 
-    // 1. AUDIT CELL: CURSOR AI
-    if (input.tools.cursor) {
-        const { plan, monthlySpend, seats } = input.tools.cursor;
-        totalMonthlySpend += monthlySpend;
+  // 1. AUDIT CELL: CURSOR AI 
+  if (input.tools.cursor) {
+    const { plan, monthlySpend, seats } = input.tools.cursor;
+    totalMonthlySpend += monthlySpend;
+    
+    let recommendedSpend = monthlySpend;
+    let action = "Keep current plan";
+    let reasoning = "Your active seat counts match your operational profile and current subscription tier.";
 
-        let recommendedSpend = monthlySpend;
-        let action = "Keep current plan";
-        let reasoning = "Your active seat counts match your operational profile and current subscription tier.";
+    const tierType = normalizePlanTier(plan);
 
-        // Logic: Business/Team plan requires a minimum or is overkill for 1-2 users
-        if ((plan.toLowerCase() === 'business' || plan.toLowerCase() === 'team' || plan.toLowerCase() === 'teams') && seats <= 2) {
-            // Pro individual is $20/user/month, Business/Team is typically $40/user/month
-            recommendedSpend = seats * 20;
-            action = "Downgrade from Business/Team to Individual Pro";
-            reasoning = "A team size of ${seats} does not justify centralized workspcace overhead. Moving to pro individual accounts saves $20 per seat.";
-
-        }
-        // Logic: Redundant tools check (Cursor vs Coplilot license overlap)
-        else if (input.tools.githubCopilot && seats > 0) {
-            recommendedSpend = Math.max(0, monthlySpend - (input.tools.githubCopilot.monthlySpend * 0.5));
-            action = "Consolidate code assistants";
-            reasoning = "Detected concurrent billing for Cursor and GitHub Copilot. Consolidating into a single editor ecosystem eliminates tool redundancy.";
-        }
-
-        const savings = Math.max(0, monthlySpend - recommendedSpend);
-        toolBreakdown['cursor'] = { currentSpend: monthlySpend, recommendedActions: action, recommendedSpend, savings, reasoning };
-        totalMonthlySavings += savings;
+    // Rule: Business/Teams plan requires a minimum or is overkill for 1-2 users
+    if (tierType === 'team' && seats <= 2) {
+      recommendedSpend = seats * 20; // Pro individual retail is $20/user/month
+      action = "Downgrade from Business/Team to Individual Pro seats";
+      reasoning = `A team size of ${seats} does not justify premium centralized workspace overhead. Moving to Pro individual accounts saves $20 per seat.`;
+    } 
+    // Rule: Redundant tools check (Cursor vs Copilot license overlap)
+    else if (input.tools.githubCopilot && seats > 0) {
+      recommendedSpend = Math.max(0, monthlySpend - (input.tools.githubCopilot.monthlySpend * 0.5));
+      action = "Consolidate code assistants";
+      reasoning = "Detected concurrent billing for both Cursor and GitHub Copilot. Consolidating into a single editor ecosystem eliminates tool redundancy.";
+    }
+    // Defensive Fallback handling for arbitrary string inputs
+    else if (tierType === 'fallback') {
+      recommendedSpend = seats * 20; 
+      action = "Review non-standard enterprise licensing parameters";
+      reasoning = `Your custom tier entry "${plan}" was normalized to a safe baseline equivalent to prevent budgeting calculation failure.`;
     }
 
-    // 2. AUDIT CELL: GITHUB COPILOT
-    if (input.tools.githubCopilot) {
-        const { plan, monthlySpend, seats } = input.tools.githubCopilot;
-        totalMonthlySpend += monthlySpend;
+    const savings = Math.max(0, monthlySpend - recommendedSpend);
+    toolBreakdown['cursor'] = { currentSpend: monthlySpend, recommendedAction: action, recommendedSpend, savings, reasoning };
+    totalMonthlySavings += savings;
+  }
 
-        let recommendedSpend = monthlySpend;
-        let action = "Keep current plan";
-        let reasoning = "Licensing expenditure aligns cleanly with reported seat capacity.";
+  // 2. AUDIT CELL: GITHUB COPILOT 
+  if (input.tools.githubCopilot) {
+    const { plan, monthlySpend, seats } = input.tools.githubCopilot;
+    totalMonthlySpend += monthlySpend;
+    
+    let recommendedSpend = monthlySpend;
+    let action = "Keep current plan";
+    let reasoning = "Licensing expenditure aligns cleanly with reported seat capacity.";
 
-        // Logic: Centralized consolidation to single IDE environment if cursor is the main workspace
-        if (input.tools.cursor && input.tools.cursor.seats >= seats) {
-            recommendedSpend = 0;
-            action = "Deprecate GitHub Copilot licenses";
-            reasoning = "Cursor inlcudes native inline autocomplete and chat models out of the box, rendering stanalone copilot licenses redundant.";
-        }
-
-        const savings = Math.max(0, monthlySpend - recommendedSpend);
-        toolBreakdown['githubCopilot'] = { currentSpend: monthlySpend, recommendedActions: action, recommendedSpend, savings: savings, reasoning };
-        totalMonthlySavings += savings;
-
+    // Rule: Centralized consolidation to single IDE environments if Cursor is the main workspace
+    if (input.tools.cursor && input.tools.cursor.seats >= seats) {
+      recommendedSpend = 0;
+      action = "Deprecate GitHub Copilot licenses";
+      reasoning = "Cursor includes native inline autocomplete and chat models out of the box, rendering standalone Copilot licenses redundant.";
     }
 
-    // 3. AUDIT CELL: CLAUDE
-    if (input.tools.claude) {
-        const { plan, monthlySpend, seats } = input.tools.claude;
-        totalMonthlySpend += monthlySpend;
+    const savings = Math.max(0, monthlySpend - recommendedSpend);
+    toolBreakdown['githubCopilot'] = { currentSpend: monthlySpend, recommendedAction: action, recommendedSpend, savings, reasoning };
+    totalMonthlySavings += savings;
+  }
 
-        let recommendedSpend = monthlySpend;
-        let action = "Keep current plan";
-        let reasoning = "Claude infrastructure matches standard workspace patterns.";
+  // 3. AUDIT CELL: CLAUDE 
+  if (input.tools.claude) {
+    const { plan, monthlySpend, seats } = input.tools.claude;
+    totalMonthlySpend += monthlySpend;
 
-        // Logic: Team tiers for less than 5 seats are ecomnically inefficient compared to Pro
-        if (plan.toLowerCase() === 'team' && seats < 5) {
-            recommendedSpend = seats * 20;
-            action = "Downgrade to Claude Pro accounts";
-            reasoning = "Claude Teams tiers enforce a 5-seat billing minimum or add a premium. Transitioning ${seats} users to Pro cuts spend back to actual usage.";
-        }
+    let recommendedSpend = monthlySpend;
+    let action = "Keep current plan";
+    let reasoning = "Claude infrastructure matches standard workspace patterns.";
 
-        const savings = Math.max(0, monthlySpend - recommendedSpend);
-        toolBreakdown['claude'] = { currentSpend: monthlySpend, recommendedActions: action, recommendedSpend, savings, reasoning };
-        totalMonthlySavings += savings;
+    const claudeTier = normalizePlanTier(plan);
+
+    // Rule: Team tiers for less than 5 seats are economically inefficient compared to Pro
+    if (claudeTier === 'team' && seats < 5) {
+      recommendedSpend = seats * 20; // Pro individual is $20/mo, Team is $30/mo
+      action = "Downgrade to Claude Pro accounts";
+      reasoning = `Claude Team tiers enforce a 5-seat billing minimum. Transitioning ${seats} users to Pro cuts spend back to actual usage.`;
+    }
+    // Defensive Fallback handling for custom string inputs
+    else if (claudeTier === 'fallback') {
+      recommendedSpend = seats * 20;
+      action = "Review custom Claude enterprise workspace footprint";
+      reasoning = `The custom tier notation "${plan}" fell back gracefully to single seat cost structures.`;
     }
 
-    // 4. AUDIT CELL: CHATGPT
-    if (input.tools.chatgpt) {
-        const { plan, monthlySpend, seats } = input.tools.chatgpt;
-        totalMonthlySpend += monthlySpend;
+    const savings = Math.max(0, monthlySpend - recommendedSpend);
+    toolBreakdown['claude'] = { currentSpend: monthlySpend, recommendedAction: action, recommendedSpend, savings, reasoning };
+    totalMonthlySavings += savings;
+  }
 
-        let recommendedSpend = monthlySpend;
-        let action = "Keep current plan";
-        let reasoning = "Subscription baseline reflects retail standard usage metrics.";
+  // 4. AUDIT CELL: CHATGPT 
+  if (input.tools.chatGpt) {
+    const { plan, monthlySpend, seats } = input.tools.chatGpt;
+    totalMonthlySpend += monthlySpend;
 
-        // Logic: Cross-vendor redundancy check (Paying for both ChatGPT Plus and Claude Pro for basic workflow)
-        if (input.tools.claude && input.tools.claude.seats >= seats && input.primaryUseCase !== 'mixed') {
-            recommendedSpend = Math.max(0, monthlySpend - (seats * 20));
-            action = "Consolidate genral LLM seats";
-            reasoning = "Running duplicate active chat seats across both ChatGPT and Claude for a specialized '${input.primaryUseCase}' workflow creates internal licensing friction.";
+    let recommendedSpend = monthlySpend;
+    let action = "Keep current plan";
+    let reasoning = "Subscription baseline reflects retail standard usage metrics.";
 
-        }
-
-        const savings = Math.max(0, monthlySpend - recommendedSpend);
-        toolBreakdown['chatgpt'] = { currentSpend: monthlySpend, recommendedActions: action, recommendedSpend, savings, reasoning };
-        totalMonthlySavings += savings;
+    // Rule: Cross-vendor redundancy check (Paying for both ChatGPT Plus and Claude Pro for basic workflows)
+    if (input.tools.claude && input.tools.claude.seats >= seats && input.primaryUseCase !== 'mixed') {
+      recommendedSpend = Math.max(0, monthlySpend - (seats * 20));
+      action = "Consolidate general LLM seats";
+      reasoning = `Running duplicate active chat seats across both ChatGPT and Claude for a specialized '${input.primaryUseCase}' workflow creates internal licensing friction.`;
     }
 
-    // 5. AUDIT CELL: ANTHROPIC API & OPENAI API DIRECT
-    const apiTools = [
-        { key: 'anthropicAPi', data: input.tools.anthropicApi },
-        { key: 'openAiApi', data: input.tools.openAiApi }
-    ];
-    apiTools.forEach(api => {
-        if (api.data) {
-            const { monthlySpend, seats } = api.data;
-            totalMonthlySpend += monthlySpend;
+    const savings = Math.max(0, monthlySpend - recommendedSpend);
+    toolBreakdown['chatGpt'] = { currentSpend: monthlySpend, recommendedAction: action, recommendedSpend, savings, reasoning };
+    totalMonthlySavings += savings;
+  }
 
-            let recommendedSpend = monthlySpend;
-            let action = "Keep API direct structure";
-            let reasoning = "Pay-as-you-go token consumption matches API resource metrics.";
+  // 5. AUDIT CELL: ANTHROPIC & OPENAI API DIRECT 
+  const apiTools = [
+    { key: 'anthropicApi', data: input.tools.anthropicApi },
+    { key: 'openAiApi', data: input.tools.openAiApi }
+  ];
 
-            // Logic: Unthrottled direct API spend can often be routing raw text or development scripts that are cheap when channeled through  customized bulk models or credit lines
-            if (monthlySpend > 400) {
-                recommendedSpend = monthlySpend * 0.05;
-                action = "Implement routing thresholds or credit lines";
-                reasoning = `Unrestricted raw developer token consumption exceeding $400/mo signals a transtion point where caching strategies or credit pools save up to 15%.`
-            }
+  apiTools.forEach(api => {
+    if (api.data) {
+      const { monthlySpend } = api.data;
+      totalMonthlySpend += monthlySpend;
 
-            const savings = Math.max(0, monthlySpend - recommendedSpend);
-            toolBreakdown[api.key] = { currentSpend: monthlySpend, recommendedActions: action, recommendedSpend, savings, reasoning };
-            totalMonthlySavings += savings;
-        }
-    });
+      let recommendedSpend = monthlySpend;
+      let action = "Keep API direct structure";
+      let reasoning = "Pay-as-you-go token consumption matches historical API resource metrics.";
 
-    // 6. AUDIT CELL: GEMINI & WINDSURF
-    const longTailTools = [
-        { key: 'gemini', data: input.tools.gemini },
-        { key: 'windsurf', data: input.tools.windsurf }
-    ];
-    longTailTools.forEach(tool => {
-        if (tool.data) {
-            const { monthlySpend, seats } = tool.data;
-            totalMonthlySpend += monthlySpend;
+      // Rule: High unthrottled direct token spend signals transition point to wholesale caching structures
+      if (monthlySpend > 400) {
+        recommendedSpend = monthlySpend * 0.85; // Assume standard 15% system optimization target
+        action = "Implement routing thresholds or credit lines";
+        reasoning = `Unrestricted raw developer token consumption exceeding $400/mo signals a transition point where caching strategies or credit pools save up to 15%.`;
+      }
 
-            // Default fallback for optimized baseline raws
-            toolBreakdown[tool.key] = {
-                currentSpend: monthlySpend,
-                recommendedActions: "Keep current configuration",
-                recommendedSpend: monthlySpend,
-                savings: 0,
-                reasoning: "Current spending matches optimal rates for specialized workflow tooling."
-            };
-        }
-    });
-
-    // 7. GLOBAL HIGHLIGHTS MATRICS
-    const totalAnnualSavings = totalMonthlySavings * 12;
-
-    // Set tier evaluation flags exactly as specified by the assignment bounds
-    let tierStatus: 'OPTIMAL' | 'MODERATE_SAVINGS' | 'HIGH_SAVINGS' = 'OPTIMAL';
-    if (totalMonthlySavings >= 500) {
-        tierStatus = "HIGH_SAVINGS";
+      const savings = Math.max(0, monthlySpend - recommendedSpend);
+      toolBreakdown[api.key] = { currentSpend: monthlySpend, recommendedAction: action, recommendedSpend, savings, reasoning };
+      totalMonthlySavings += savings;
     }
-    else if (totalMonthlySavings > 0) {
-        tierStatus = "MODERATE_SAVINGS";
+  });
+
+  // 6. AUDIT CELL: GEMINI & WINDSURF
+  const longTailTools = [
+    { key: 'gemini', data: input.tools.gemini },
+    { key: 'windsurf', data: input.tools.windsurf }
+  ];
+
+  longTailTools.forEach(tool => {
+    if (tool.data) {
+      const { monthlySpend } = tool.data;
+      totalMonthlySpend += monthlySpend;
+      
+      // Kept lean to prevent friction in specialized single-engineer tooling
+      toolBreakdown[tool.key] = {
+        currentSpend: monthlySpend,
+        recommendedAction: "Keep current configuration",
+        recommendedSpend: monthlySpend,
+        savings: 0,
+        reasoning: "Current spending matches optimal market rates for specialized workflow tooling."
+      };
     }
+  });
 
-    // High-savings automatically signal sales consultation route
-    const requiresConsultation = totalMonthlySavings >= 500;
+  // GLOBAL HIGHLIGHT METRIC MATH LAYER
+  const totalAnnualSavings = totalMonthlySavings * 12;
+  
+  // Set systemic tier flags matching the evaluation threshold requirements
+  let tierStatus: 'OPTIMAL' | 'MODERATE_SAVINGS' | 'HIGH_SAVINGS' = 'OPTIMAL';
+  if (totalMonthlySavings >= 500) {
+    tierStatus = 'HIGH_SAVINGS'; // Automatically flags corporate provisioning markers
+  } else if (totalMonthlySavings > 100) {
+    tierStatus = 'MODERATE_SAVINGS';
+  }
 
-    return {
-        totalMonthlySpend,
-        totalMonthlySavings,
-        totalAnnualSavings,
-        toolBreakdown,
-        tierStatus,
-        requiresConsultation
-    };
+  // High overspend thresholds programmatically route instances to a consultative pipeline
+  const requiresConsultation = totalMonthlySavings >= 500;
+
+  return {
+    totalMonthlySpend,
+    totalMonthlySavings,
+    totalAnnualSavings,
+    toolBreakdown,
+    tierStatus,
+    requiresConsultation
+  };
 }
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

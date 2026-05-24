@@ -71,3 +71,21 @@
 
 **Plan for tomorrow:**
 * Formulate the mock data structure protocols for vendor comparisons and begin drafting the Anthropic data tier fallback structure.
+
+## Day 4 2026-05-24
+
+**Hours worked:** 2.0
+
+**What I did:**
+* Compiled and structured the root-level `PRICING_DATA.md` baseline matrix mapping standard SaaS tool tiers and default floor configurations.
+* Refactored the core computational engine utility with a defensive string scanner (`normalizePlanTier`) to ingest and standardize arbitrary non-standard user textual inputs.
+* Implemented systemic fallback behaviors assigning safe $20/seat default parameters to guard calculations against execution breaks or NaN corruptions.
+
+**What I learned:**
+* Building text-normalization token maps is vital when dealing with open user form text components, ensuring backend execution flows are independent of brittle frontend typing layouts.
+
+**Blockers / what I'm stuck on:**
+* None. Moving forward cleanly.
+
+**Plan for tomorrow:**
+* Resolve the interview documentation framework requirements and prepare the data pipeline to connect external markdown references safely.

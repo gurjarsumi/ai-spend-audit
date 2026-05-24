@@ -18,7 +18,7 @@ describe('AI Spend Audit Engine Verification Suite', () => {
     expect(report.totalMonthlySpend).toBe(40);
     expect(report.totalMonthlySavings).toBe(20); // Down to Pro ($20)
     expect(report.totalAnnualSavings).toBe(240);
-    expect(report.toolBreakdown.cursor.recommendedActions).toContain('Downgrade');
+    expect(report.toolBreakdown.cursor.recommendedAction).toContain('Downgrade');
   });
 
   // Test 2: Verifies structural redundancy detection across overlapping tool classes
@@ -36,7 +36,7 @@ describe('AI Spend Audit Engine Verification Suite', () => {
 
     expect(report.toolBreakdown.githubCopilot.recommendedSpend).toBe(0);
     expect(report.toolBreakdown.githubCopilot.savings).toBe(57);
-    expect(report.toolBreakdown.githubCopilot.recommendedActions).toContain('Deprecate');
+    expect(report.toolBreakdown.githubCopilot.recommendedAction).toContain('Deprecate');
   });
 
   // Test 3: Verifies vendor floor inefficiencies (e.g., Claude minimum seat boundaries)

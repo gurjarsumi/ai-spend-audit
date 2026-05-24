@@ -68,7 +68,7 @@ export default function SpendForm() {
         cursor: tools.cursor.enabled ? { plan: tools.cursor.plan, monthlySpend: tools.cursor.monthlySpend, seats: tools.cursor.seats } : undefined,
         githubCopilot: tools.githubCopilot.enabled ? { plan: tools.githubCopilot.plan, monthlySpend: tools.githubCopilot.monthlySpend, seats: tools.githubCopilot.seats } : undefined,
         claude: tools.claude.enabled ? { plan: tools.claude.plan, monthlySpend: tools.claude.monthlySpend, seats: tools.claude.seats } : undefined,
-        chatgpt: tools.chatGpt.enabled ? { plan: tools.chatGpt.plan, monthlySpend: tools.chatGpt.monthlySpend, seats: tools.chatGpt.seats } : undefined,
+        chatGpt: tools.chatGpt.enabled ? { plan: tools.chatGpt.plan, monthlySpend: tools.chatGpt.monthlySpend, seats: tools.chatGpt.seats } : undefined,
         anthropicApi: tools.anthropicApi.enabled ? { plan: tools.anthropicApi.plan, monthlySpend: tools.anthropicApi.monthlySpend, seats: tools.anthropicApi.seats } : undefined,
         openAiApi: tools.openAiApi.enabled ? { plan: tools.openAiApi.plan, monthlySpend: tools.openAiApi.monthlySpend, seats: tools.openAiApi.seats } : undefined,
         gemini: tools.gemini.enabled ? { plan: tools.gemini.plan, monthlySpend: tools.gemini.monthlySpend, seats: tools.gemini.seats } : undefined,
@@ -250,7 +250,7 @@ export default function SpendForm() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                   <div>
                     <span className="text-xs text-slate-500 block">Recommended Strategy:</span>
-                    <span className="font-medium text-slate-300">{result.recommendedActions}</span>
+                    <span className="font-medium text-slate-300">{result.recommendedAction}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 block">Target Budget Floor:</span>
