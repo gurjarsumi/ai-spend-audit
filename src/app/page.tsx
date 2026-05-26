@@ -6,7 +6,7 @@ export default function Home() {
       {/* Brand Header */}
       <div className="max-w-4xl mx-auto text-center mb-12">
         <span className="text-xs font-bold uppercase tracking-widest text-teal-400 bg-teal-500/10 px-3 py-1 rounded-full border border-teal-500/20">
-          Day 3 Beta Build
+          ⚡ FAST AUDIT | DETERMINISTIC ENGINE ACTIVE
         </span>
         <h1 className="text-4xl sm:text-5xl font-black text-white mt-4 tracking-tight">
           AI Spend <span className="text-teal-400">Auditor</span>
