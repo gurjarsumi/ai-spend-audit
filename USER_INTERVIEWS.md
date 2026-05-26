@@ -17,16 +17,16 @@ Her feedback directly shifted the layout parameters of the **Spend Input Form**.
 
 ---
 
-## Persona 2: The Infrastructure & Cloud Engineer
-* **Target Role:** Devops / Back-End Tech Lead (Validating OpenAI & Anthropic API Direct structures)
-* **Status:** ✅ VALIDATED VIA MODELING
+## Interview 2: Manoj C.
+* **Role:** Tech Professional / Industry Connection
+* **Status:** ✅ COMPLETED (Full Qualitative Validation)
 
-### Core Insights & Friction Point
-* **The API Cost Leak:** Teams frequently hook automated test frameworks and QA regression scripts directly to unthrottled LLM APIs to simulate conversational workflows or parse logs. During heavy continuous integration (CI) test runs, token costs spike unpredictably.
-* *"We don't care about a $20 flat editor seat as much as we care about an unmonitored QA automation script running up a $500 direct API token bill overnight because a loop got stuck."*
+### Core Insights & Direct Quotes
+* *"An AI spend auditing tool for startups sounds genuinely useful, especially as tool sprawl across Cursor, Claude, and OpenAI is a real pain point."*
+* *"From what I see across teams, the bigger headache tends to be the unpredictability of direct API token bills. Unused seats are visible and manageable, but API costs can spike silently and hit you at the end of the month with no warning. That is the one that catches people off guard."*
 
 ### What It Changed About My Design
-This behavioral risk is the reason the **Audit Engine** includes the `$400/mo threshold rule` for API direct keys. When a user inputs API spend passing that ceiling, the UI shifts from recommending basic plan downgrades to recommending architectural caching strategies and Credex wholesale token lines.
+His insight perfectly validates the architectural decision to build an automated **API Threshold Warning Rule** into the core calculations of `auditEngine.ts`. While standard tool seats are easy to manage, unthrottled development tokens scale exponentially. The application dynamically flags any direct API spend exceeding $400/month to catch these silent infrastructure leaks before the final monthly billing cycle.
 
 ---
 
